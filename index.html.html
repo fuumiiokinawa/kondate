@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#c4704f">
+<title>献立プランナー</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#faf8f5;--card:#fff;--text:#2d2a26;--sub:#6b6560;--accent:#c4704f;--border:#e8e4df;--green:#6b8f71;--blue:#5c7a9b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Zen Kaku Gothic New',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.header{background:linear-gradient(135deg,#f5ebe0,#faf8f5);padding:1rem;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.header-content{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.logo{font-size:1.4rem;font-weight:700;display:flex;align-items:center;gap:0.5rem}
+.logo-icon{width:40px;height:40px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.nav-tabs{display:flex;gap:0.4rem;background:var(--card);padding:0.3rem;border-radius:10px}
+.nav-tab{padding:0.5rem 1rem;border:none;background:transparent;font-family:inherit;font-size:0.85rem;color:var(--sub);cursor:pointer;border-radius:8px}
+.nav-tab.active{background:var(--accent);color:white}
+.main{max-width:1200px;margin:0 auto;padding:1rem}
+.section{display:none}
+.section.active{display:block}
+.month-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.month-title{font-size:1.3rem;font-weight:700}
+.month-nav{display:flex;gap:0.4rem}
+.month-nav button{width:36px;height:36px;border:1px solid var(--border);background:var(--card);border-radius:8px;cursor:pointer}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.weekday{text-align:center;font-size:0.8rem;color:var(--sub);padding:0.4rem}
+.weekday:first-child{color:#c45c5c}
+.weekday:last-child{color:var(--blue)}
+.day{background:var(--card);border-radius:8px;padding:0.5rem;min-height:80px;cursor:pointer;border:2px solid transparent;overflow:hidden}
+.day:hover{box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+.day.selected{border-color:var(--accent)}
+.day.empty{background:transparent;cursor:default}
+.day-num{font-weight:600;margin-bottom:0.3rem}
+.day-menu{font-size:0.65rem;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panel{position:fixed;right:-100%;top:0;width:100%;max-width:400px;height:100vh;background:var(--card);box-shadow:-4px 0 20px rgba(0,0,0,0.1);transition:right 0.3s;z-index:200;overflow-y:auto}
+.panel.open{right:0}
+.panel-header{padding:1.2rem;background:linear-gradient(135deg,var(--accent),#e8a88a);color:white;position:relative}
+.panel-close{position:absolute;top:0.8rem;right:0.8rem;width:30px;height:30px;border:none;background:rgba(255,255,255,0.2);border-radius:6px;color:white;cursor:pointer;font-size:1rem}
+.panel-date{font-size:1.2rem;font-weight:700}
+.panel-sub{opacity:0.9;font-size:0.8rem}
+.panel-content{padding:1rem}
+.genre-box{background:#f0f8ff;border-radius:8px;padding:0.8rem;margin-bottom:1rem}
+.genre-title{font-size:0.8rem;color:var(--sub);margin-bottom:0.5rem}
+.genre-btns{display:flex;flex-wrap:wrap;gap:0.4rem}
+.genre-btn{padding:0.5rem 0.7rem;border:none;border-radius:6px;font-size:0.75rem;cursor:pointer;color:white;font-weight:500}
+.genre-btn.wa{background:#c62828}
+.genre-btn.ch{background:#ef6c00}
+.genre-btn.we{background:#1565c0}
+.genre-btn.me{background:#6a1b9a}
+.genre-btn.ra{background:#37474f}
+.dish-card{background:var(--bg);border-radius:10px;padding:0.8rem;margin-bottom:0.5rem}
+.dish-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:0.3rem;-webkit-tap-highlight-color:transparent}
+.dish-name{font-weight:600;font-size:0.9rem;display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap}
+.dish-tag{font-size:0.6rem;padding:0.1rem 0.3rem;border-radius:3px}
+.dish-tag.main{background:#fce8e1;color:var(--accent)}
+.dish-tag.side{background:#e5f0e7;color:var(--green)}
+.dish-tag.soup{background:#e3eef5;color:var(--blue)}
+.dish-tag.salad{background:#e8f5e9;color:#4caf50}
+.dish-tag.rice{background:#f5f0e5;color:#9b8b6e}
+.dish-toggle{color:var(--sub);transition:transform 0.3s}
+.dish-toggle.open{transform:rotate(180deg)}
+.dish-links{margin-top:0.4rem}
+.dish-link{font-size:0.75rem;color:#1a7f37;background:#e8f4e8;padding:0.3rem 0.5rem;border-radius:5px;text-decoration:none;display:inline-block}
+.recipe{display:none;margin-top:0.6rem;padding-top:0.6rem;border-top:1px dashed var(--border);font-size:0.75rem}
+.recipe.open{display:block}
+.recipe-title{font-weight:600;color:var(--accent);margin-bottom:0.3rem;font-size:0.7rem}
+.recipe-text{color:var(--sub);line-height:1.5;margin-bottom:0.5rem}
+.recipe ol{padding-left:1.2rem;color:var(--text)}
+.recipe li{margin-bottom:0.2rem}
+.shopping-header{display:flex;flex-wrap:wrap;gap:0.8rem;margin-bottom:1rem;align-items:center}
+.shopping-title{font-size:1.2rem;font-weight:700}
+.week-btns{display:flex;gap:0.3rem}
+.week-btn{padding:0.4rem 0.8rem;border:1px solid var(--border);background:var(--card);border-radius:6px;font-size:0.8rem;cursor:pointer}
+.week-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
+.copy-btn{padding:0.4rem 0.8rem;background:var(--accent);color:white;border:none;border-radius:6px;font-size:0.8rem;cursor:pointer}
+.flyer-section{display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;margin-bottom:1rem;padding:0.6rem;background:#fff;border-radius:8px}
+.flyer-label{font-size:0.85rem;color:var(--sub)}
+.flyer-btn{padding:0.4rem 0.7rem;border-radius:6px;font-size:0.75rem;text-decoration:none;color:white;font-weight:500}
+.flyer-btn.sana{background:#e60012}
+.flyer-btn.kane{background:#00a650}
+.flyer-btn.maxv{background:#ff6600}
+.price-estimate{background:linear-gradient(135deg,#fff9e6,#fff);border:2px solid #ffd700;border-radius:10px;padding:0.8rem;margin-bottom:1rem}
+.price-title{font-weight:700;font-size:0.9rem;margin-bottom:0.5rem;color:#b8860b}
+.price-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0.3rem;font-size:0.8rem}
+.price-item{display:flex;justify-content:space-between;padding:0.2rem 0;border-bottom:1px dotted #ddd}
+.price-total{margin-top:0.5rem;padding-top:0.5rem;border-top:2px solid #ffd700;font-weight:700;font-size:1rem;text-align:right;color:#b8860b}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
+.cat-card{background:var(--card);border-radius:12px;overflow:hidden}
+.cat-header{padding:0.7rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem}
+.cat-header.meat{background:linear-gradient(135deg,#fce8e1,#fff)}
+.cat-header.fish{background:linear-gradient(135deg,#e3eef5,#fff)}
+.cat-header.veg{background:linear-gradient(135deg,#e5f0e7,#fff)}
+.cat-header.dairy{background:linear-gradient(135deg,#f5f0e5,#fff)}
+.cat-header.season{background:linear-gradient(135deg,#f0e8f5,#fff)}
+.cat-header.other{background:linear-gradient(135deg,#e8e8e8,#fff)}
+.cat-items{padding:0.5rem 0.8rem}
+.shop-item{display:flex;align-items:center;padding:0.4rem 0;border-bottom:1px solid var(--border);font-size:0.85rem}
+.shop-item:last-child{border:none}
+.item-check{width:18px;height:18px;border:2px solid var(--border);border-radius:4px;margin-right:0.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.6rem;flex-shrink:0}
+.item-check.checked{background:var(--accent);border-color:var(--accent);color:white}
+.item-name{flex:1}
+.item-name.checked{text-decoration:line-through;color:var(--sub)}
+.item-amt{font-size:0.75rem;color:var(--sub);background:var(--bg);padding:0.15rem 0.3rem;border-radius:3px}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);opacity:0;visibility:hidden;z-index:150}
+.overlay.active{opacity:1;visibility:visible}
+.toast{position:fixed;bottom:1rem;right:1rem;background:var(--text);color:white;padding:0.7rem 1rem;border-radius:8px;transform:translateY(100px);opacity:0;transition:all 0.3s;z-index:300;font-size:0.85rem}
+.toast.show{transform:translateY(0);opacity:1}
+@media(max-width:600px){
+.header-content{flex-direction:column;align-items:flex-start}
+.nav-tabs{position:fixed;bottom:0;left:0;right:0;border-radius:0;justify-content:space-around;z-index:100}
+.main{padding-bottom:60px}
+.calendar{gap:2px}
+.day{height:58px;min-height:auto;padding:0.2rem;display:flex;flex-direction:column}
+.day-num{font-size:0.8rem;margin-bottom:0.1rem;flex-shrink:0}
+.day-menu{display:block;font-size:0.5rem;line-height:1.2}
+.genre-btns{gap:0.3rem}
+.genre-btn{padding:0.4rem 0.5rem;font-size:0.7rem}
+}
+</style>
+</head>
+<body>
+<header class="header"><div class="header-content"><div class="logo"><div class="logo-icon">🍳</div>献立プランナー</div><nav class="nav-tabs"><button class="nav-tab active" data-tab="calendar">カレンダー</button><button class="nav-tab" data-tab="shopping">買い物リスト</button></nav></div></header>
+<main class="main">
+<section class="section active" id="calendar">
+<div class="month-header"><h2 class="month-title" id="monthTitle">2026年1月</h2><div class="month-nav"><button id="prevMonth">◀</button><button id="nextMonth">▶</button></div></div>
+<div class="calendar" id="calendarGrid"><div class="weekday">日</div><div class="weekday">月</div><div class="weekday">火</div><div class="weekday">水</div><div class="weekday">木</div><div class="weekday">金</div><div class="weekday">土</div></div>
+</section>
+<section class="section" id="shopping">
+<div class="shopping-header"><h2 class="shopping-title">買い物リスト（6人前）</h2><div class="week-btns"><button class="week-btn active" data-week="1">第1週</button><button class="week-btn" data-week="2">第2週</button><button class="week-btn" data-week="3">第3週</button><button class="week-btn" data-week="4">第4週</button></div><button class="copy-btn" id="copyList">📋コピー</button></div>
+<div class="flyer-section"><span class="flyer-label">📄 チラシ：</span><a href="https://www.san-a.co.jp/chirashi/" target="_blank" class="flyer-btn sana">サンエー</a><a href="https://www.kanehideshj.com/flyer/" target="_blank" class="flyer-btn kane">かねひで</a><a href="https://www.aeon-ryukyu.jp/flyer/" target="_blank" class="flyer-btn maxv">マックスバリュ</a></div>
+<div class="price-estimate" id="priceEstimate"></div>
+<div class="shop-grid" id="shopGrid"></div>
+</section>
+</main>
+<div class="panel" id="panel"><button class="panel-close" id="closePanel">✕</button><div class="panel-header"><div class="panel-date" id="panelDate">1月1日</div><div class="panel-sub">6人前・約30分</div></div><div class="panel-content" id="panelContent"></div></div>
+<div class="overlay" id="overlay"></div>
+<div class="toast" id="toast"></div>
+<script>
+// 材料データ（名前、カテゴリ、分量、価格目安）
+const I={
+"鶏もも肉":{cat:"meat",unit:"g",price:1.2},
+"鶏むね肉":{cat:"meat",unit:"g",price:0.8},
+"豚ロース":{cat:"meat",unit:"g",price:1.5},
+"豚バラ":{cat:"meat",unit:"g",price:1.3},
+"豚ひき肉":{cat:"meat",unit:"g",price:1.0},
+"豚こま":{cat:"meat",unit:"g",price:1.0},
+"牛肉":{cat:"meat",unit:"g",price:2.5},
+"牛こま":{cat:"meat",unit:"g",price:2.0},
+"合い挽き":{cat:"meat",unit:"g",price:1.2},
+"鮭":{cat:"fish",unit:"切",price:200},
+"サバ":{cat:"fish",unit:"切",price:150},
+"カレイ":{cat:"fish",unit:"切",price:180},
+"ぶり":{cat:"fish",unit:"切",price:250},
+"アジ":{cat:"fish",unit:"尾",price:150},
+"えび":{cat:"fish",unit:"尾",price:50},
+"あさり":{cat:"fish",unit:"g",price:0.8},
+"しじみ":{cat:"fish",unit:"g",price:1.0},
+"玉ねぎ":{cat:"veg",unit:"個",price:50},
+"じゃがいも":{cat:"veg",unit:"個",price:40},
+"にんじん":{cat:"veg",unit:"本",price:50},
+"キャベツ":{cat:"veg",unit:"玉",price:150},
+"ほうれん草":{cat:"veg",unit:"束",price:150},
+"小松菜":{cat:"veg",unit:"束",price:120},
+"ブロッコリー":{cat:"veg",unit:"株",price:200},
+"大根":{cat:"veg",unit:"本",price:150},
+"白菜":{cat:"veg",unit:"玉",price:200},
+"長ねぎ":{cat:"veg",unit:"本",price:100},
+"ごぼう":{cat:"veg",unit:"本",price:150},
+"もやし":{cat:"veg",unit:"袋",price:30},
+"ニラ":{cat:"veg",unit:"束",price:100},
+"きゅうり":{cat:"veg",unit:"本",price:50},
+"トマト":{cat:"veg",unit:"個",price:80},
+"ピーマン":{cat:"veg",unit:"個",price:30},
+"なす":{cat:"veg",unit:"本",price:50},
+"かぼちゃ":{cat:"veg",unit:"個",price:300},
+"れんこん":{cat:"veg",unit:"節",price:200},
+"里芋":{cat:"veg",unit:"個",price:50},
+"しめじ":{cat:"veg",unit:"パック",price:100},
+"えのき":{cat:"veg",unit:"パック",price:80},
+"しいたけ":{cat:"veg",unit:"パック",price:150},
+"青梗菜":{cat:"veg",unit:"株",price:80},
+"水菜":{cat:"veg",unit:"袋",price:100},
+"いんげん":{cat:"veg",unit:"g",price:1.0},
+"レタス":{cat:"veg",unit:"玉",price:150},
+"卵":{cat:"dairy",unit:"個",price:25},
+"豆腐":{cat:"dairy",unit:"丁",price:80},
+"油揚げ":{cat:"dairy",unit:"枚",price:30},
+"厚揚げ":{cat:"dairy",unit:"枚",price:80},
+"バター":{cat:"dairy",unit:"g",price:1.5},
+"牛乳":{cat:"dairy",unit:"ml",price:0.2},
+"マヨネーズ":{cat:"season",unit:"本",price:300},
+"味噌":{cat:"season",unit:"g",price:0.5},
+"醤油":{cat:"season",unit:"本",price:300},
+"みりん":{cat:"season",unit:"本",price:300},
+"酒":{cat:"season",unit:"本",price:300},
+"酢":{cat:"season",unit:"本",price:200},
+"ごま油":{cat:"season",unit:"本",price:400},
+"すりごま":{cat:"season",unit:"袋",price:200},
+"豆板醤":{cat:"season",unit:"瓶",price:300},
+"甜麺醤":{cat:"season",unit:"瓶",price:350},
+"オイスターソース":{cat:"season",unit:"本",price:300},
+"コンソメ":{cat:"season",unit:"箱",price:300},
+"鶏がらスープの素":{cat:"season",unit:"瓶",price:300},
+"カレールー":{cat:"season",unit:"箱",price:250},
+"塩麹":{cat:"season",unit:"瓶",price:350},
+"ポン酢":{cat:"season",unit:"本",price:300},
+"ケチャップ":{cat:"season",unit:"本",price:250},
+"わかめ":{cat:"other",unit:"袋",price:150},
+"春雨":{cat:"other",unit:"袋",price:150},
+"塩昆布":{cat:"other",unit:"袋",price:200},
+"ひじき":{cat:"other",unit:"袋",price:200},
+"なめこ":{cat:"other",unit:"パック",price:100},
+"キムチ":{cat:"other",unit:"g",price:0.5},
+"餃子の皮":{cat:"other",unit:"枚",price:5},
+"たけのこ":{cat:"other",unit:"パック",price:200},
+"こんにゃく":{cat:"other",unit:"枚",price:100},
+"マカロニ":{cat:"other",unit:"g",price:0.3},
+"焼きそば麺":{cat:"other",unit:"玉",price:50},
+"春巻きの皮":{cat:"other",unit:"枚",price:15},
+"コーン缶":{cat:"other",unit:"缶",price:150},
+"ツナ缶":{cat:"other",unit:"缶",price:150},
+"米":{cat:"other",unit:"kg",price:500}
+};
+
+// レシピデータ（材料リスト付き）
+const R={
+"鶏の照り焼き":{i:"鶏もも肉900g、醤油大さじ4、みりん大さじ4、酒大さじ2、砂糖大さじ2",s:["鶏肉を一口大に切る","フライパンで皮目から焼く","調味料を加えて煮絡める"],ing:[["鶏もも肉",900]]},
+"ほうれん草のごま和え":{i:"ほうれん草3束、すりごま大さじ4、醤油大さじ2、砂糖大さじ1",s:["ほうれん草を茹でて切る","ごま・醤油・砂糖で和える"],ing:[["ほうれん草",3]]},
+"豆腐とわかめの味噌汁":{i:"豆腐2丁、わかめ大さじ2、だし汁1200ml、味噌大さじ5",s:["だし汁を温める","豆腐とわかめを加え味噌を溶く"],ing:[["豆腐",2],["わかめ",1]]},
+"キャベツの塩昆布サラダ":{i:"キャベツ1/2玉、塩昆布30g、ごま油大さじ2",s:["キャベツを千切り","塩昆布とごま油で和える"],ing:[["キャベツ",0.5],["塩昆布",1]]},
+"豚の生姜焼き":{i:"豚ロース600g、玉ねぎ1個、生姜2かけ、醤油大さじ4、みりん大さじ3",s:["生姜をすりおろす","豚肉と玉ねぎを炒める","調味料を絡める"],ing:[["豚ロース",600],["玉ねぎ",1]]},
+"きんぴらごぼう":{i:"ごぼう2本、にんじん1本、醤油大さじ3、みりん大さじ2、ごま油大さじ2",s:["細切りにする","ごま油で炒める","調味料で炒め煮"],ing:[["ごぼう",2],["にんじん",1]]},
+"なめこの味噌汁":{i:"なめこ2パック、豆腐1丁、だし汁1200ml、味噌大さじ5",s:["なめこを洗う","だし汁で温め味噌を溶く"],ing:[["なめこ",2],["豆腐",1]]},
+"大根サラダ":{i:"大根1/2本、かつお節適量、ポン酢大さじ4",s:["大根を千切り","かつお節とポン酢をかける"],ing:[["大根",0.5]]},
+"鮭のムニエル":{i:"鮭6切れ、塩こしょう適量、小麦粉適量、バター40g",s:["鮭に塩こしょうし小麦粉をまぶす","バターで両面焼く"],ing:[["鮭",6],["バター",40]]},
+"ブロッコリーのおかか和え":{i:"ブロッコリー2株、かつお節2パック、醤油大さじ2",s:["ブロッコリーを茹でる","かつお節と醤油で和える"],ing:[["ブロッコリー",2]]},
+"卵スープ":{i:"卵4個、鶏がらスープの素大さじ2、水1200ml",s:["スープを沸かす","溶き卵を回し入れる"],ing:[["卵",4]]},
+"トマトときゅうりのサラダ":{i:"トマト4個、きゅうり3本、ドレッシング適量",s:["野菜を切る","ドレッシングをかける"],ing:[["トマト",4],["きゅうり",3]]},
+"肉じゃが":{i:"牛肉400g、じゃがいも6個、にんじん2本、玉ねぎ2個、醤油大さじ5、みりん大さじ4、砂糖大さじ3",s:["野菜を切る","肉と野菜を炒める","だし汁と調味料で煮込む"],ing:[["牛こま",400],["じゃがいも",6],["にんじん",2],["玉ねぎ",2]]},
+"小松菜のおひたし":{i:"小松菜2束、だし汁100ml、醤油大さじ2",s:["小松菜を茹でて切る","だし汁と醤油をかける"],ing:[["小松菜",2]]},
+"大根の味噌汁":{i:"大根1/3本、油揚げ2枚、だし汁1200ml、味噌大さじ5",s:["大根を切る","だし汁で煮て味噌を溶く"],ing:[["大根",0.3],["油揚げ",2]]},
+"もやしのナムル":{i:"もやし4袋、ごま油大さじ3、塩小さじ1、にんにく1かけ",s:["もやしを茹でる","調味料で和える"],ing:[["もやし",4]]},
+"麻婆豆腐":{i:"豆腐3丁、豚ひき肉300g、長ねぎ2本、豆板醤大さじ2、甜麺醤大さじ2",s:["豆腐を切る","ひき肉を炒め調味料を加える","豆腐を加えとろみをつける"],ing:[["豆腐",3],["豚ひき肉",300],["長ねぎ",2]]},
+"春雨サラダ":{i:"春雨100g、きゅうり2本、ハム6枚、醤油大さじ3、酢大さじ3、ごま油大さじ2",s:["春雨を茹でる","具材を切って和える"],ing:[["春雨",1],["きゅうり",2]]},
+"中華スープ":{i:"卵3個、わかめ大さじ2、鶏がらスープの素大さじ2、水1200ml",s:["スープを沸かす","わかめと卵を加える"],ing:[["卵",3],["わかめ",1]]},
+"きゅうりの浅漬け":{i:"きゅうり4本、塩小さじ2、昆布5cm",s:["きゅうりを切る","塩をまぶして30分置く"],ing:[["きゅうり",4]]},
+"カレイの煮付け":{i:"カレイ6切れ、醤油大さじ4、みりん大さじ4、酒大さじ4、砂糖大さじ2、生姜1かけ",s:["煮汁を煮立てる","カレイを入れ15分煮る"],ing:[["カレイ",6]]},
+"ひじきの煮物":{i:"ひじき40g、にんじん1本、油揚げ2枚、醤油大さじ3、みりん大さじ2",s:["ひじきを戻す","炒めてだし汁で煮る"],ing:[["ひじき",1],["にんじん",1],["油揚げ",2]]},
+"あさりの味噌汁":{i:"あさり400g、だし汁1200ml、味噌大さじ4",s:["あさりを砂抜き","だし汁で煮て味噌を溶く"],ing:[["あさり",400]]},
+"白菜の浅漬け":{i:"白菜1/4玉、塩大さじ1、昆布5cm",s:["白菜を切る","塩を振り1時間置く"],ing:[["白菜",0.25]]},
+"ハンバーグ":{i:"合い挽き肉600g、玉ねぎ1個、パン粉1カップ、卵1個、ケチャップ・ソース各大さじ4",s:["玉ねぎを炒める","材料を混ぜてこねる","焼いてソースをかける"],ing:[["合い挽き",600],["玉ねぎ",1],["卵",1]]},
+"コーンポテトサラダ":{i:"じゃがいも6個、コーン缶1缶、きゅうり1本、マヨネーズ大さじ6",s:["じゃがいもを茹でて潰す","具材とマヨネーズで和える"],ing:[["じゃがいも",6],["コーン缶",1],["きゅうり",1]]},
+"コンソメスープ":{i:"玉ねぎ1個、にんじん1本、キャベツ1/4玉、コンソメ3個、水1200ml",s:["野菜を切る","水とコンソメで煮込む"],ing:[["玉ねぎ",1],["にんじん",1],["キャベツ",0.25]]},
+"グリーンサラダ":{i:"レタス1玉、きゅうり2本、トマト2個、ドレッシング適量",s:["野菜を切る","ドレッシングをかける"],ing:[["レタス",1],["きゅうり",2],["トマト",2]]},
+"鶏の唐揚げ":{i:"鶏もも肉900g、醤油大さじ4、酒大さじ2、生姜1かけ、片栗粉適量",s:["鶏肉を下味に漬ける","片栗粉をまぶして揚げる"],ing:[["鶏もも肉",900]]},
+"卵焼き":{i:"卵6個、だし汁大さじ4、砂糖大さじ2、醤油小さじ1",s:["卵を溶いて調味料を混ぜる","少しずつ流して巻く"],ing:[["卵",6]]},
+"豚汁":{i:"豚バラ200g、大根1/4本、にんじん1本、ごぼう1本、こんにゃく1枚、味噌大さじ5",s:["野菜を切る","豚肉と野菜を炒め煮込む","味噌を溶く"],ing:[["豚バラ",200],["大根",0.25],["にんじん",1],["ごぼう",1],["こんにゃく",1]]},
+"キャベツの千切り":{i:"キャベツ1/2玉",s:["キャベツを千切りにする","冷水でシャキッとさせる"],ing:[["キャベツ",0.5]]},
+"豚キムチ":{i:"豚バラ400g、キムチ300g、玉ねぎ1個、ニラ1束、ごま油大さじ2",s:["豚肉を炒める","キムチと野菜を加えて炒める"],ing:[["豚バラ",400],["キムチ",300],["玉ねぎ",1],["ニラ",1]]},
+"チヂミ":{i:"ニラ2束、玉ねぎ1個、小麦粉150g、卵2個、水200ml、ごま油大さじ4",s:["生地を作る","野菜を混ぜる","両面カリッと焼く"],ing:[["ニラ",2],["玉ねぎ",1],["卵",2]]},
+"わかめスープ":{i:"わかめ大さじ2、卵2個、鶏がらスープの素大さじ2、水1200ml",s:["スープを沸かす","わかめと卵を加える"],ing:[["わかめ",1],["卵",2]]},
+"韓国風サラダ":{i:"レタス1玉、きゅうり2本、韓国のり2パック、ごま油大さじ2",s:["野菜を切る","のりとごま油で和える"],ing:[["レタス",1],["きゅうり",2]]},
+"サバの味噌煮":{i:"サバ6切れ、味噌大さじ4、みりん大さじ3、酒大さじ3、砂糖大さじ2、生姜1かけ",s:["煮汁を煮立てる","サバを煮る","味噌を加える"],ing:[["サバ",6]]},
+"切り干し大根":{i:"切り干し大根60g、にんじん1本、油揚げ2枚、醤油大さじ3、みりん大さじ2",s:["切り干し大根を戻す","炒めてだし汁で煮る"],ing:[["にんじん",1],["油揚げ",2]]},
+"しじみの味噌汁":{i:"しじみ300g、だし汁1200ml、味噌大さじ4",s:["しじみを砂抜き","水から煮て味噌を溶く"],ing:[["しじみ",300]]},
+"酢の物":{i:"きゅうり3本、わかめ大さじ2、酢大さじ4、砂糖大さじ2",s:["きゅうりを薄切り","酢と砂糖で和える"],ing:[["きゅうり",3],["わかめ",1]]},
+"回鍋肉":{i:"豚バラ400g、キャベツ1/2玉、ピーマン4個、甜麺醤大さじ3、豆板醤大さじ1",s:["野菜を切る","豚肉を炒めて野菜を加える","調味料で絡める"],ing:[["豚バラ",400],["キャベツ",0.5],["ピーマン",4]]},
+"餃子":{i:"豚ひき肉300g、キャベツ1/4玉、ニラ1束、餃子の皮60枚",s:["具を作る","皮で包む","焼いて蒸す"],ing:[["豚ひき肉",300],["キャベツ",0.25],["ニラ",1],["餃子の皮",60]]},
+"酸辣湯":{i:"豆腐1丁、卵3個、たけのこ100g、酢大さじ4、ラー油大さじ1",s:["具を切る","スープで煮る","卵を加えラー油をかける"],ing:[["豆腐",1],["卵",3],["たけのこ",1]]},
+"バンバンジーサラダ":{i:"鶏むね肉2枚、きゅうり3本、練りごま大さじ4、醤油大さじ3",s:["鶏肉を茹でて裂く","きゅうりと盛る","ごまダレをかける"],ing:[["鶏むね肉",400],["きゅうり",3]]},
+"チキン南蛮":{i:"鶏もも肉900g、卵2個、醤油大さじ4、酢大さじ4、砂糖大さじ3、タルタル用卵3個",s:["鶏肉を揚げる","南蛮酢に絡める","タルタルをかける"],ing:[["鶏もも肉",900],["卵",5]]},
+"かぼちゃの煮物":{i:"かぼちゃ1個、醤油大さじ3、みりん大さじ3、砂糖大さじ2",s:["かぼちゃを切る","だし汁と調味料で煮る"],ing:[["かぼちゃ",1]]},
+"コーンスープ":{i:"コーン缶2缶、玉ねぎ1個、牛乳600ml、コンソメ2個",s:["玉ねぎを炒める","コーンと牛乳を加えミキサーにかける"],ing:[["コーン缶",2],["玉ねぎ",1],["牛乳",600]]},
+"タルタルサラダ":{i:"ゆで卵4個、きゅうり2本、マヨネーズ大さじ5、レタス1/2玉",s:["具を刻む","マヨネーズで和える"],ing:[["卵",4],["きゅうり",2],["レタス",0.5]]},
+"青椒肉絲":{i:"牛肉400g、ピーマン6個、たけのこ150g、オイスターソース大さじ2",s:["細切りにする","肉を炒め野菜を加える","調味料で絡める"],ing:[["牛肉",400],["ピーマン",6],["たけのこ",1]]},
+"冷奴":{i:"豆腐3丁、生姜1かけ、ねぎ適量、醤油適量",s:["豆腐を切る","薬味をのせ醤油をかける"],ing:[["豆腐",3]]},
+"卵とトマトのスープ":{i:"卵3個、トマト3個、鶏がらスープの素大さじ2、水1200ml",s:["トマトを切る","スープで煮て卵を加える"],ing:[["卵",3],["トマト",3]]},
+"ザーサイ和え":{i:"きゅうり3本、ザーサイ100g、ごま油大さじ2",s:["きゅうりを切る","ザーサイとごま油で和える"],ing:[["きゅうり",3]]},
+"鯖の塩焼き":{i:"サバ6切れ、塩適量、大根おろし適量",s:["サバに塩を振る","グリルで焼く"],ing:[["サバ",6],["大根",0.3]]},
+"厚揚げの煮物":{i:"厚揚げ4枚、醤油大さじ3、みりん大さじ2、だし汁300ml",s:["厚揚げを切る","だし汁と調味料で煮る"],ing:[["厚揚げ",4]]},
+"けんちん汁":{i:"大根1/4本、にんじん1本、ごぼう1本、豆腐1丁、だし汁1500ml",s:["野菜を切る","ごま油で炒め煮込む"],ing:[["大根",0.25],["にんじん",1],["ごぼう",1],["豆腐",1]]},
+"ほうれん草の白和え":{i:"ほうれん草2束、豆腐1丁、すりごま大さじ3、砂糖大さじ1",s:["ほうれん草を茹でる","豆腐と調味料で和える"],ing:[["ほうれん草",2],["豆腐",1]]},
+"牛丼":{i:"牛肉500g、玉ねぎ2個、醤油大さじ5、みりん大さじ4、砂糖大さじ2",s:["玉ねぎを切る","だし汁と調味料で煮る","牛肉を加えご飯にのせる"],ing:[["牛肉",500],["玉ねぎ",2]]},
+"温泉卵":{i:"卵6個",s:["湯を沸かし火を止める","卵を入れ12分置く"],ing:[["卵",6]]},
+"味噌汁":{i:"豆腐1丁、わかめ大さじ2、だし汁1200ml、味噌大さじ5",s:["だし汁を温める","具を加え味噌を溶く"],ing:[["豆腐",1],["わかめ",1]]},
+"鶏肉とキノコの炒め":{i:"鶏もも肉600g、しめじ2パック、えのき2パック、醤油大さじ3、バター30g",s:["鶏肉を切る","バターで焼きキノコを加える","調味料で絡める"],ing:[["鶏もも肉",600],["しめじ",2],["えのき",2],["バター",30]]},
+"茶碗蒸し":{i:"卵4個、だし汁600ml、鶏肉100g、かまぼこ6枚",s:["卵液を作る","具を入れ蒸す"],ing:[["卵",4],["鶏もも肉",100]]},
+"きのこ汁":{i:"しめじ2パック、えのき1パック、だし汁1200ml、味噌大さじ5",s:["きのこを切る","だし汁で煮て味噌を溶く"],ing:[["しめじ",2],["えのき",1]]},
+"青菜のお浸し":{i:"小松菜3束、だし汁100ml、醤油大さじ2",s:["小松菜を茹でる","だし汁と醤油をかける"],ing:[["小松菜",3]]},
+"エビチリ":{i:"えび24尾、長ねぎ2本、ケチャップ大さじ5、豆板醤大さじ1",s:["えびを下処理","炒めて調味料で煮絡める"],ing:[["えび",24],["長ねぎ",2]]},
+"青梗菜の炒め":{i:"青梗菜4株、にんにく2かけ、鶏がらスープの素小さじ2",s:["青梗菜を切る","にんにくと炒める"],ing:[["青梗菜",4]]},
+"ワンタンスープ":{i:"ワンタンの皮30枚、豚ひき肉150g、鶏がらスープの素大さじ2",s:["具を作り包む","スープで茹でる"],ing:[["豚ひき肉",150]]},
+"きゅうりの中華和え":{i:"きゅうり4本、にんにく1かけ、醤油大さじ2、ごま油大さじ2",s:["きゅうりを叩く","調味料で和える"],ing:[["きゅうり",4]]},
+"とんかつ":{i:"豚ロース6枚、小麦粉・卵・パン粉各適量、キャベツ1/2玉",s:["衣をつける","170℃で揚げる"],ing:[["豚ロース",600],["キャベツ",0.5],["卵",2]]},
+"なめこ汁":{i:"なめこ2パック、豆腐1丁、だし汁1200ml、味噌大さじ5",s:["なめこを洗う","だし汁で温め味噌を溶く"],ing:[["なめこ",2],["豆腐",1]]},
+"マカロニサラダ":{i:"マカロニ200g、きゅうり2本、ハム6枚、マヨネーズ大さじ6",s:["マカロニを茹でる","具とマヨネーズで和える"],ing:[["マカロニ",200],["きゅうり",2]]},
+"アジの南蛮漬け":{i:"アジ6尾、玉ねぎ1個、酢150ml、醤油大さじ4、砂糖大さじ3",s:["アジを揚げる","野菜と南蛮酢に漬ける"],ing:[["アジ",6],["玉ねぎ",1]]},
+"里芋の煮物":{i:"里芋12個、醤油大さじ3、みりん大さじ2、だし汁400ml",s:["里芋を下茹で","だし汁と調味料で煮る"],ing:[["里芋",12]]},
+"お吸い物":{i:"はんぺん2枚、三つ葉1束、だし汁1200ml、醤油小さじ2",s:["だし汁を温める","具を加え味を調える"],ing:[]},
+"オムライス":{i:"ご飯6杯、鶏肉200g、玉ねぎ1個、ケチャップ大さじ6、卵12個",s:["チキンライスを作る","卵で包む"],ing:[["鶏もも肉",200],["玉ねぎ",1],["卵",12]]},
+"ウインナー炒め":{i:"ウインナー12本",s:["切り込みを入れ炒める"],ing:[]},
+"野菜スープ":{i:"キャベツ1/4玉、にんじん1本、じゃがいも2個、コンソメ3個",s:["野菜を切る","コンソメで煮込む"],ing:[["キャベツ",0.25],["にんじん",1],["じゃがいも",2]]},
+"コールスロー":{i:"キャベツ1/2玉、にんじん1/2本、コーン1缶、マヨネーズ大さじ5",s:["野菜を千切り","マヨネーズで和える"],ing:[["キャベツ",0.5],["にんじん",0.5],["コーン缶",1]]},
+"親子丼":{i:"鶏もも肉400g、玉ねぎ2個、卵8個、醤油大さじ4、みりん大さじ3",s:["鶏肉と玉ねぎを煮る","卵でとじてご飯にのせる"],ing:[["鶏もも肉",400],["玉ねぎ",2],["卵",8]]},
+"赤だし":{i:"豆腐1丁、わかめ大さじ2、だし汁1200ml、赤味噌大さじ5",s:["だし汁を温める","具を加え赤味噌を溶く"],ing:[["豆腐",1],["わかめ",1]]},
+"水菜サラダ":{i:"水菜2袋、油揚げ2枚、ポン酢大さじ4、ごま油大さじ1",s:["水菜を切る","油揚げを焼いて和える"],ing:[["水菜",2],["油揚げ",2]]},
+"鶏むね肉の味噌漬け焼き":{i:"鶏むね肉600g、味噌大さじ4、みりん大さじ2",s:["味噌だれに漬ける","フライパンで焼く"],ing:[["鶏むね肉",600]]},
+"れんこんのきんぴら":{i:"れんこん2節、にんじん1本、醤油大さじ3、ごま油大さじ2",s:["薄切りにする","ごま油で炒め煮する"],ing:[["れんこん",2],["にんじん",1]]},
+"豆腐の味噌汁":{i:"豆腐2丁、長ねぎ1本、だし汁1200ml、味噌大さじ5",s:["だし汁を温める","豆腐を加え味噌を溶く"],ing:[["豆腐",2],["長ねぎ",1]]},
+"にんじんしりしり":{i:"にんじん3本、卵3個、ツナ缶1缶、醤油大さじ1",s:["にんじんを千切り","炒めて卵とツナを加える"],ing:[["にんじん",3],["卵",3],["ツナ缶",1]]},
+"ぶりの照り焼き":{i:"ぶり6切れ、醤油大さじ4、みりん大さじ4、酒大さじ2",s:["ぶりを焼く","調味料を加え煮絡める"],ing:[["ぶり",6]]},
+"筑前煮":{i:"鶏もも肉400g、れんこん1節、ごぼう1本、にんじん1本、醤油大さじ4",s:["材料を切る","炒めてだし汁で煮込む"],ing:[["鶏もも肉",400],["れんこん",1],["ごぼう",1],["にんじん",1]]},
+"あおさの味噌汁":{i:"あおさ大さじ3、豆腐1丁、だし汁1200ml、味噌大さじ5",s:["だし汁を温める","火を止めあおさと味噌を加える"],ing:[["豆腐",1]]},
+"大根なます":{i:"大根1/3本、にんじん1/3本、酢大さじ4、砂糖大さじ2",s:["千切りにする","酢と砂糖で和える"],ing:[["大根",0.3],["にんじん",0.3]]},
+"焼きそば":{i:"焼きそば麺6玉、豚バラ200g、キャベツ1/4玉、もやし2袋、ソース大さじ6",s:["野菜を切る","肉と野菜を炒め麺を加える","ソースで味付け"],ing:[["焼きそば麺",6],["豚バラ",200],["キャベツ",0.25],["もやし",2]]},
+"もやしの中華サラダ":{i:"もやし3袋、きゅうり2本、ハム4枚、醤油大さじ2、酢大さじ2、ごま油大さじ2",s:["もやしを茹でる","具と調味料で和える"],ing:[["もやし",3],["きゅうり",2]]},
+"豚の角煮":{i:"豚バラブロック800g、醤油大さじ5、みりん大さじ4、砂糖大さじ3",s:["豚肉を下茹で","調味料で30分煮込む"],ing:[["豚バラ",800]]},
+"煮卵":{i:"卵6個、醤油大さじ4、みりん大さじ2",s:["卵を茹でる","調味液に漬ける"],ing:[["卵",6]]},
+"白菜の味噌汁":{i:"白菜1/4玉、油揚げ2枚、だし汁1200ml、味噌大さじ5",s:["白菜を切る","だし汁で煮て味噌を溶く"],ing:[["白菜",0.25],["油揚げ",2]]},
+"ほうれん草ナムル":{i:"ほうれん草3束、ごま油大さじ3、塩小さじ1、にんにく1かけ",s:["ほうれん草を茹でる","調味料で和える"],ing:[["ほうれん草",3]]},
+"鮭のホイル焼き":{i:"鮭6切れ、玉ねぎ1個、しめじ1パック、バター40g",s:["ホイルに具をのせる","フライパンで蒸し焼き"],ing:[["鮭",6],["玉ねぎ",1],["しめじ",1],["バター",40]]},
+"いんげんの胡麻和え":{i:"いんげん200g、すりごま大さじ3、醤油大さじ1、砂糖大さじ1",s:["いんげんを茹でる","ごまと調味料で和える"],ing:[["いんげん",200]]},
+"キャベツの味噌汁":{i:"キャベツ1/4玉、油揚げ2枚、だし汁1200ml、味噌大さじ5",s:["キャベツを切る","だし汁で煮て味噌を溶く"],ing:[["キャベツ",0.25],["油揚げ",2]]},
+"ポン酢きのこ":{i:"しめじ2パック、えのき1パック、ポン酢大さじ4",s:["きのこを茹でる","ポン酢で和える"],ing:[["しめじ",2],["えのき",1]]},
+"豚肉と野菜の炒め":{i:"豚こま肉400g、キャベツ1/4玉、にんじん1本、もやし2袋、醤油大さじ2",s:["野菜を切る","肉と野菜を炒め味付け"],ing:[["豚こま",400],["キャベツ",0.25],["にんじん",1],["もやし",2]]},
+"ポテトサラダ":{i:"じゃがいも6個、きゅうり1本、ハム4枚、マヨネーズ大さじ6",s:["じゃがいもを茹でて潰す","具とマヨネーズで和える"],ing:[["じゃがいも",6],["きゅうり",1]]},
+"たまねぎの味噌汁":{i:"玉ねぎ2個、油揚げ2枚、だし汁1200ml、味噌大さじ5",s:["玉ねぎを切る","だし汁で煮て味噌を溶く"],ing:[["玉ねぎ",2],["油揚げ",2]]},
+"トマトサラダ":{i:"トマト4個、玉ねぎ1/2個、ドレッシング適量",s:["トマトを切る","ドレッシングをかける"],ing:[["トマト",4],["玉ねぎ",0.5]]},
+"カレーライス":{i:"牛肉400g、じゃがいも4個、にんじん2本、玉ねぎ3個、カレールー2箱",s:["野菜と肉を切る","炒めて煮込む","ルーを加える"],ing:[["牛肉",400],["じゃがいも",4],["にんじん",2],["玉ねぎ",3],["カレールー",2]]},
+"鶏の塩麹焼き":{i:"鶏もも肉900g、塩麹大さじ4",s:["塩麹に漬ける","フライパンで焼く"],ing:[["鶏もも肉",900]]},
+"なすの煮びたし":{i:"なす6本、めんつゆ200ml、水200ml、生姜1かけ",s:["なすを揚げ焼き","めんつゆに漬ける"],ing:[["なす",6]]},
+"油揚げの味噌汁":{i:"油揚げ3枚、長ねぎ1本、だし汁1200ml、味噌大さじ5",s:["油揚げを切る","だし汁で温め味噌を溶く"],ing:[["油揚げ",3],["長ねぎ",1]]},
+"きゅうりとわかめの酢の物":{i:"きゅうり3本、わかめ大さじ2、酢大さじ4、砂糖大さじ2",s:["きゅうりを薄切り","酢と砂糖で和える"],ing:[["きゅうり",3],["わかめ",1]]},
+"八宝菜":{i:"豚肉200g、えび12尾、白菜1/4玉、にんじん1本、オイスターソース大さじ2",s:["材料を切る","炒めてとろみをつける"],ing:[["豚こま",200],["えび",12],["白菜",0.25],["にんじん",1]]},
+"春巻き":{i:"春巻きの皮12枚、豚ひき肉150g、たけのこ100g、春雨30g",s:["具を炒めて包む","カリッと揚げる"],ing:[["春巻きの皮",12],["豚ひき肉",150],["たけのこ",1],["春雨",1]]},
+"たまごスープ":{i:"卵4個、鶏がらスープの素大さじ2、水1200ml",s:["スープを沸かす","卵を加える"],ing:[["卵",4]]},
+"中華風冷奴":{i:"豆腐3丁、長ねぎ1本、醤油大さじ2、ごま油大さじ2、ラー油少々",s:["豆腐を切る","薬味と調味料をかける"],ing:[["豆腐",3],["長ねぎ",1]]},
+"すき焼き風煮込み":{i:"牛肉500g、白菜1/4玉、長ねぎ2本、焼き豆腐2丁、醤油大さじ5、みりん大さじ4、砂糖大さじ3",s:["材料を切る","調味料で煮込む"],ing:[["牛肉",500],["白菜",0.25],["長ねぎ",2],["豆腐",2]]},
+"白菜のおひたし":{i:"白菜1/4玉、だし汁100ml、醤油大さじ2",s:["白菜を茹でる","だし汁と醤油をかける"],ing:[["白菜",0.25]]},
+"しいたけの味噌汁":{i:"しいたけ1パック、豆腐1丁、だし汁1200ml、味噌大さじ5",s:["しいたけを切る","だし汁で煮て味噌を溶く"],ing:[["しいたけ",1],["豆腐",1]]}
+};
+
+const G={
+japanese:[
+{main:"鶏の照り焼き",side:"ほうれん草のごま和え",soup:"豆腐とわかめの味噌汁",salad:"キャベツの塩昆布サラダ"},
+{main:"豚の生姜焼き",side:"きんぴらごぼう",soup:"なめこの味噌汁",salad:"大根サラダ"},
+{main:"肉じゃが",side:"小松菜のおひたし",soup:"大根の味噌汁",salad:"もやしのナムル"},
+{main:"カレイの煮付け",side:"ひじきの煮物",soup:"あさりの味噌汁",salad:"白菜の浅漬け"},
+{main:"鶏の唐揚げ",side:"卵焼き",soup:"豚汁",salad:"キャベツの千切り"},
+{main:"サバの味噌煮",side:"切り干し大根",soup:"しじみの味噌汁",salad:"酢の物"},
+{main:"鯖の塩焼き",side:"厚揚げの煮物",soup:"けんちん汁",salad:"ほうれん草の白和え"},
+{main:"牛丼",side:"温泉卵",soup:"味噌汁",salad:"きゅうりの浅漬け"},
+{main:"親子丼",side:"冷奴",soup:"赤だし",salad:"水菜サラダ"},
+{main:"ぶりの照り焼き",side:"筑前煮",soup:"あおさの味噌汁",salad:"大根なます"},
+{main:"豚の角煮",side:"煮卵",soup:"白菜の味噌汁",salad:"ほうれん草ナムル"},
+{main:"鮭のホイル焼き",side:"いんげんの胡麻和え",soup:"キャベツの味噌汁",salad:"ポン酢きのこ"},
+{main:"鶏の塩麹焼き",side:"なすの煮びたし",soup:"油揚げの味噌汁",salad:"きゅうりとわかめの酢の物"},
+{main:"すき焼き風煮込み",side:"白菜のおひたし",soup:"しいたけの味噌汁",salad:"大根サラダ"}
+],
+chinese:[
+{main:"麻婆豆腐",side:"春雨サラダ",soup:"中華スープ",salad:"きゅうりの浅漬け"},
+{main:"回鍋肉",side:"餃子",soup:"酸辣湯",salad:"バンバンジーサラダ"},
+{main:"青椒肉絲",side:"冷奴",soup:"卵とトマトのスープ",salad:"ザーサイ和え"},
+{main:"エビチリ",side:"青梗菜の炒め",soup:"ワンタンスープ",salad:"きゅうりの中華和え"},
+{main:"八宝菜",side:"春巻き",soup:"たまごスープ",salad:"中華風冷奴"},
+{main:"豚キムチ",side:"チヂミ",soup:"わかめスープ",salad:"韓国風サラダ"}
+],
+western:[
+{main:"ハンバーグ",side:"コーンポテトサラダ",soup:"コンソメスープ",salad:"グリーンサラダ"},
+{main:"チキン南蛮",side:"かぼちゃの煮物",soup:"コーンスープ",salad:"タルタルサラダ"},
+{main:"とんかつ",side:"キャベツの千切り",soup:"なめこ汁",salad:"マカロニサラダ"},
+{main:"オムライス",side:"ウインナー炒め",soup:"野菜スープ",salad:"コールスロー"},
+{main:"カレーライス",side:"コールスロー",soup:"コンソメスープ",salad:"グリーンサラダ"},
+{main:"鮭のムニエル",side:"ブロッコリーのおかか和え",soup:"卵スープ",salad:"トマトときゅうりのサラダ"},
+{main:"鶏むね肉の味噌漬け焼き",side:"れんこんのきんぴら",soup:"豆腐の味噌汁",salad:"にんじんしりしり"}
+],
+noodle:[
+{main:"焼きそば",side:"ポテトサラダ",soup:"中華スープ",salad:"もやしの中華サラダ"},
+{main:"豚肉と野菜の炒め",side:"ポテトサラダ",soup:"たまねぎの味噌汁",salad:"トマトサラダ"},
+{main:"鶏肉とキノコの炒め",side:"茶碗蒸し",soup:"きのこ汁",salad:"青菜のお浸し"},
+{main:"アジの南蛮漬け",side:"里芋の煮物",soup:"お吸い物",salad:"大根サラダ"}
+]
+};
+
+const M={
+1:{main:"鶏の照り焼き",side:"ほうれん草のごま和え",soup:"豆腐とわかめの味噌汁",salad:"キャベツの塩昆布サラダ",rice:"白ご飯"},
+2:{main:"豚の生姜焼き",side:"きんぴらごぼう",soup:"なめこの味噌汁",salad:"大根サラダ",rice:"白ご飯"},
+3:{main:"鮭のムニエル",side:"ブロッコリーのおかか和え",soup:"卵スープ",salad:"トマトときゅうりのサラダ",rice:"白ご飯"},
+4:{main:"肉じゃが",side:"小松菜のおひたし",soup:"大根の味噌汁",salad:"もやしのナムル",rice:"白ご飯"},
+5:{main:"麻婆豆腐",side:"春雨サラダ",soup:"中華スープ",salad:"きゅうりの浅漬け",rice:"白ご飯"},
+6:{main:"カレイの煮付け",side:"ひじきの煮物",soup:"あさりの味噌汁",salad:"白菜の浅漬け",rice:"白ご飯"},
+7:{main:"ハンバーグ",side:"コーンポテトサラダ",soup:"コンソメスープ",salad:"グリーンサラダ",rice:"白ご飯"},
+8:{main:"鶏の唐揚げ",side:"卵焼き",soup:"豚汁",salad:"キャベツの千切り",rice:"白ご飯"},
+9:{main:"豚キムチ",side:"チヂミ",soup:"わかめスープ",salad:"韓国風サラダ",rice:"白ご飯"},
+10:{main:"サバの味噌煮",side:"切り干し大根",soup:"しじみの味噌汁",salad:"酢の物",rice:"白ご飯"},
+11:{main:"回鍋肉",side:"餃子",soup:"酸辣湯",salad:"バンバンジーサラダ",rice:"白ご飯"},
+12:{main:"チキン南蛮",side:"かぼちゃの煮物",soup:"コーンスープ",salad:"タルタルサラダ",rice:"白ご飯"},
+13:{main:"青椒肉絲",side:"冷奴",soup:"卵とトマトのスープ",salad:"ザーサイ和え",rice:"白ご飯"},
+14:{main:"鯖の塩焼き",side:"厚揚げの煮物",soup:"けんちん汁",salad:"ほうれん草の白和え",rice:"白ご飯"},
+15:{main:"牛丼",side:"温泉卵",soup:"味噌汁",salad:"きゅうりの浅漬け",rice:"丼ご飯"},
+16:{main:"鶏肉とキノコの炒め",side:"茶碗蒸し",soup:"きのこ汁",salad:"青菜のお浸し",rice:"白ご飯"},
+17:{main:"エビチリ",side:"青梗菜の炒め",soup:"ワンタンスープ",salad:"きゅうりの中華和え",rice:"白ご飯"},
+18:{main:"とんかつ",side:"キャベツの千切り",soup:"なめこ汁",salad:"マカロニサラダ",rice:"白ご飯"},
+19:{main:"アジの南蛮漬け",side:"里芋の煮物",soup:"お吸い物",salad:"大根サラダ",rice:"白ご飯"},
+20:{main:"オムライス",side:"ウインナー炒め",soup:"野菜スープ",salad:"コールスロー",rice:"チキンライス"},
+21:{main:"親子丼",side:"冷奴",soup:"赤だし",salad:"水菜サラダ",rice:"丼ご飯"},
+22:{main:"鶏むね肉の味噌漬け焼き",side:"れんこんのきんぴら",soup:"豆腐の味噌汁",salad:"にんじんしりしり",rice:"白ご飯"},
+23:{main:"ぶりの照り焼き",side:"筑前煮",soup:"あおさの味噌汁",salad:"大根なます",rice:"白ご飯"},
+24:{main:"焼きそば",side:"ポテトサラダ",soup:"中華スープ",salad:"もやしの中華サラダ",rice:"焼きそば麺"},
+25:{main:"豚の角煮",side:"煮卵",soup:"白菜の味噌汁",salad:"ほうれん草ナムル",rice:"白ご飯"},
+26:{main:"鮭のホイル焼き",side:"いんげんの胡麻和え",soup:"キャベツの味噌汁",salad:"ポン酢きのこ",rice:"白ご飯"},
+27:{main:"豚肉と野菜の炒め",side:"ポテトサラダ",soup:"たまねぎの味噌汁",salad:"トマトサラダ",rice:"白ご飯"},
+28:{main:"カレーライス",side:"コールスロー",soup:"コンソメスープ",salad:"グリーンサラダ",rice:"カレーライス"},
+29:{main:"鶏の塩麹焼き",side:"なすの煮びたし",soup:"油揚げの味噌汁",salad:"きゅうりとわかめの酢の物",rice:"白ご飯"},
+30:{main:"八宝菜",side:"春巻き",soup:"たまごスープ",salad:"中華風冷奴",rice:"白ご飯"},
+31:{main:"すき焼き風煮込み",side:"白菜のおひたし",soup:"しいたけの味噌汁",salad:"大根サラダ",rice:"白ご飯"}
+};
+
+const W=['日','月','火','水','木','金','土'];
+let year=2026,month=0,week=1;
+
+// 買い物リストを自動生成
+function generateShoppingList(weekNum){
+    const startDay=(weekNum-1)*7+1;
+    const endDay=Math.min(weekNum*7,31);
+    const list={meat:{},fish:{},veg:{},dairy:{},season:{},other:{}};
+    let totalPrice=0;
+    
+    for(let d=startDay;d<=endDay;d++){
+        const m=M[d];
+        if(!m)continue;
+        ['main','side','soup','salad'].forEach(type=>{
+            const dish=m[type];
+            const recipe=R[dish];
+            if(recipe&&recipe.ing){
+                recipe.ing.forEach(([name,amt])=>{
+                    const info=I[name];
+                    if(info){
+                        if(!list[info.cat][name])list[info.cat][name]=0;
+                        list[info.cat][name]+=amt;
+                    }
+                });
+            }
+        });
+    }
+    
+    // 価格計算
+    const prices={meat:0,fish:0,veg:0,dairy:0,season:0,other:0};
+    Object.keys(list).forEach(cat=>{
+        Object.entries(list[cat]).forEach(([name,amt])=>{
+            const info=I[name];
+            if(info){
+                prices[cat]+=Math.ceil(info.price*amt);
+            }
+        });
+    });
+    
+    return {list,prices};
+}
+
+function formatAmount(name,amt){
+    const info=I[name];
+    if(!info)return amt+'';
+    if(info.unit==='g'&&amt>=1000)return (amt/1000).toFixed(1)+'kg';
+    if(info.unit==='g')return amt+'g';
+    if(info.unit==='ml'&&amt>=1000)return (amt/1000).toFixed(1)+'L';
+    if(info.unit==='ml')return amt+'ml';
+    if(amt===Math.floor(amt))return amt+info.unit;
+    return amt.toFixed(1)+info.unit;
+}
+
+function renderCal(){
+    const g=document.getElementById('calendarGrid');
+    const h=[...g.querySelectorAll('.weekday')];
+    g.innerHTML='';h.forEach(e=>g.appendChild(e));
+    document.getElementById('monthTitle').textContent=year+'年'+(month+1)+'月';
+    const f=new Date(year,month,1),l=new Date(year,month+1,0);
+    for(let i=0;i<f.getDay();i++){const d=document.createElement('div');d.className='day empty';g.appendChild(d);}
+    for(let d=1;d<=l.getDate();d++){
+        const el=document.createElement('div');
+        el.className='day';el.dataset.day=d;
+        const m=M[d];
+        el.innerHTML='<div class="day-num">'+d+'</div>'+(m?'<div class="day-menu">'+m.main+'</div>':'');
+        el.onclick=()=>openPanel(d);
+        g.appendChild(el);
+    }
+}
+
+function openPanel(d){
+    const m=M[d];if(!m)return;
+    document.querySelectorAll('.day').forEach(e=>e.classList.remove('selected'));
+    document.querySelector('.day[data-day="'+d+'"]')?.classList.add('selected');
+    const dt=new Date(year,month,d);
+    document.getElementById('panelDate').textContent=(month+1)+'月'+d+'日（'+W[dt.getDay()]+'）';
+    const c=document.getElementById('panelContent');
+    c.innerHTML='<div class="genre-box"><div class="genre-title">🔄 メニュー変更</div><div class="genre-btns" id="genreBtns"><button class="genre-btn wa">🍱和食</button><button class="genre-btn ch">🥟中華</button><button class="genre-btn we">🍳洋食</button><button class="genre-btn me">🍜麺丼</button><button class="genre-btn ra">🎲おまかせ</button></div></div>';
+    document.querySelector('.genre-btn.wa').onclick=()=>changeMenu(d,'japanese');
+    document.querySelector('.genre-btn.ch').onclick=()=>changeMenu(d,'chinese');
+    document.querySelector('.genre-btn.we').onclick=()=>changeMenu(d,'western');
+    document.querySelector('.genre-btn.me').onclick=()=>changeMenu(d,'noodle');
+    document.querySelector('.genre-btn.ra').onclick=()=>changeMenu(d,'random');
+    const items=[['main','メイン'],['side','副菜'],['soup','汁物'],['salad','サラダ'],['rice','主食']];
+    items.forEach(([k,t])=>{
+        const n=m[k];if(!n)return;
+        const r=R[n];
+        const card=document.createElement('div');card.className='dish-card';
+        const skip=['白ご飯','丼ご飯','チキンライス','カレーライス','焼きそば麺'];
+        const hasR=r&&!skip.includes(n);
+        const rid='r'+k+d;
+        card.innerHTML='<div class="dish-header"><div class="dish-name">'+n+'<span class="dish-tag '+k+'">'+t+'</span></div>'+(hasR?'<span class="dish-toggle" id="t'+rid+'">▼</span>':'')+'</div><div class="recipe" id="'+rid+'">'+(hasR?'<div class="dish-links"><a href="https://www.google.com/search?q='+encodeURIComponent(n+' レシピ')+'" target="_blank" class="dish-link">🔍 レシピ検索</a></div><div class="recipe-title">📝 材料（6人前）</div><div class="recipe-text">'+r.i+'</div><div class="recipe-title">👨‍🍳 作り方</div><ol>'+r.s.map(s=>'<li>'+s+'</li>').join('')+'</ol>':'')+'</div>';
+        if(hasR){
+            card.querySelector('.dish-header').onclick=function(){
+                document.getElementById(rid).classList.toggle('open');
+                document.getElementById('t'+rid).classList.toggle('open');
+            };
+        }
+        c.appendChild(card);
+    });
+    document.getElementById('panel').classList.add('open');
+    document.getElementById('overlay').classList.add('active');
+}
+
+function closePanel(){
+    document.getElementById('panel').classList.remove('open');
+    document.getElementById('overlay').classList.remove('active');
+    document.querySelectorAll('.day').forEach(e=>e.classList.remove('selected'));
+}
+
+function changeMenu(d,genre){
+    let list;
+    if(genre==='random'){list=[...G.japanese,...G.chinese,...G.western,...G.noodle];}
+    else{list=G[genre];}
+    const pick=list[Math.floor(Math.random()*list.length)];
+    M[d]={main:pick.main,side:pick.side,soup:pick.soup,salad:pick.salad,rice:'白ご飯'};
+    renderCal();
+    renderShop(); // 買い物リストも更新！
+    openPanel(d);
+    toast('メニューと買い物リストを更新しました！');
+}
+
+function renderShop(){
+    const g=document.getElementById('shopGrid');
+    const {list,prices}=generateShoppingList(week);
+    const catNames={meat:['🥩','肉類'],fish:['🐟','魚介'],veg:['🥬','野菜'],dairy:['🥚','卵・乳製品'],season:['🧂','調味料'],other:['🛒','その他']};
+    
+    let html='';
+    Object.entries(catNames).forEach(([cat,[icon,name]])=>{
+        const items=Object.entries(list[cat]);
+        if(items.length===0)return;
+        html+='<div class="cat-card"><div class="cat-header '+cat+'">'+icon+' '+name+'</div><div class="cat-items">';
+        items.forEach(([itemName,amt])=>{
+            html+='<div class="shop-item"><div class="item-check" onclick="this.classList.toggle(\'checked\');this.innerHTML=this.classList.contains(\'checked\')?\'✓\':\'\';this.nextElementSibling.classList.toggle(\'checked\')"></div><span class="item-name">'+itemName+'</span><span class="item-amt">'+formatAmount(itemName,amt)+'</span></div>';
+        });
+        html+='</div></div>';
+    });
+    g.innerHTML=html;
+    
+    const total=prices.meat+prices.fish+prices.veg+prices.dairy+prices.season+prices.other;
+    document.getElementById('priceEstimate').innerHTML='<div class="price-title">💰 第'+week+'週の購入価格予想</div><div class="price-grid"><div class="price-item"><span>🥩 肉類</span><span>約'+prices.meat.toLocaleString()+'円</span></div><div class="price-item"><span>🐟 魚介</span><span>約'+prices.fish.toLocaleString()+'円</span></div><div class="price-item"><span>🥬 野菜</span><span>約'+prices.veg.toLocaleString()+'円</span></div><div class="price-item"><span>🥚 卵・乳製品</span><span>約'+prices.dairy.toLocaleString()+'円</span></div><div class="price-item"><span>🧂 調味料</span><span>約'+prices.season.toLocaleString()+'円</span></div><div class="price-item"><span>🛒 その他</span><span>約'+prices.other.toLocaleString()+'円</span></div></div><div class="price-total">合計：約'+total.toLocaleString()+'円</div>';
+}
+
+function copyList(){
+    const {list}=generateShoppingList(week);
+    const catNames={meat:'肉類',fish:'魚介',veg:'野菜',dairy:'卵・乳製品',season:'調味料',other:'その他'};
+    let t='【第'+week+'週の買い物リスト（6人前）】\n\n';
+    Object.entries(catNames).forEach(([cat,name])=>{
+        const items=Object.entries(list[cat]);
+        if(items.length===0)return;
+        t+='■'+name+'\n';
+        items.forEach(([itemName,amt])=>t+='・'+itemName+': '+formatAmount(itemName,amt)+'\n');
+        t+='\n';
+    });
+    navigator.clipboard.writeText(t).then(()=>toast('コピーしました'));
+}
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
+
+document.querySelectorAll('.nav-tab').forEach(t=>t.onclick=function(){
+    document.querySelectorAll('.nav-tab').forEach(e=>e.classList.remove('active'));
+    this.classList.add('active');
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.getElementById(this.dataset.tab).classList.add('active');
+});
+
+document.querySelectorAll('.week-btn').forEach(b=>b.onclick=function(){
+    document.querySelectorAll('.week-btn').forEach(e=>e.classList.remove('active'));
+    this.classList.add('active');week=+this.dataset.week;renderShop();
+});
+
+document.getElementById('closePanel').onclick=closePanel;
+document.getElementById('overlay').onclick=closePanel;
+document.getElementById('prevMonth').onclick=()=>{month--;if(month<0){month=11;year--;}renderCal();};
+document.getElementById('nextMonth').onclick=()=>{month++;if(month>11){month=0;year++;}renderCal();};
+document.getElementById('copyList').onclick=copyList;
+
+renderCal();renderShop();
+</script>
+</body>
+</html>
