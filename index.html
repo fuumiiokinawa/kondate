@@ -652,6 +652,25 @@ body {
   transform: scale(1.1);
 }
 
+.panel-back {
+  display: inline-block;
+  padding: 0.6rem 1.2rem;
+  margin-bottom: 0.8rem;
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 8px;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.panel-back:hover {
+  background: rgba(255,255,255,0.35);
+}
+
 .panel-date {
   font-family: 'Noto Serif JP', serif;
   font-size: 1.4rem;
@@ -720,16 +739,17 @@ body {
   border-top: 1px solid var(--border-light);
   position: sticky;
   bottom: 0;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
 }
 
 .back-to-calendar-btn {
   width: 100%;
-  padding: 1rem;
+  padding: 1.2rem;
   background: var(--gold-gradient);
   color: #2d2a26;
   border: none;
   border-radius: 12px;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
@@ -2020,8 +2040,8 @@ body {
 </main>
 
 <div class="panel" id="panel">
-  <button class="panel-close" id="closePanel">✕</button>
   <div class="panel-header">
+    <button class="panel-back" id="closePanel">← 戻る</button>
     <div class="panel-date" id="panelDate">1月1日</div>
     <div class="panel-sub" id="panelSub">6人前</div>
   </div>
